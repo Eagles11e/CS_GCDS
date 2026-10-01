@@ -16,6 +16,7 @@
 #              - #17 Own function: toggle case                         #
 #                                                                      #
 # Log:         - 10:08 9/29/2026: Submitted                            #
+#              - 9:06 10/1/2026: Minor revision for formatting fixes   #
 ########################################################################
 
 import random
@@ -75,7 +76,6 @@ def reverse_then_display(string):
         # Putting each new character in front of the result reverses it
         reversed_str = char + reversed_str
     print(reversed_str)
-
 
 def vowel_counter(userinfo):
     """
@@ -156,7 +156,6 @@ def scramble_name(userinfo):
         letters[i] = letters[j]
         letters[j] = temp
 
-
     result = ""
     next_letter = 0
     for char in userinfo:
@@ -179,7 +178,7 @@ def get_last_name(userinfo):
 
     for char in userinfo:
         if char == " ":
-            new_word = True                           # flag so we know a new word might be starting
+            new_word = True                           # flag so it is known a new word might be starting
 
         else:
             if new_word:
