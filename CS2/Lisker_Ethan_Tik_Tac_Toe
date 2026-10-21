@@ -6,6 +6,8 @@
 #                                                                                  #
 #    DATE: October 31, 2026                                                        #
 #                                                                                  #
+#    LOG: Version 1.0: 10/21/2026 - Initial functions and minor challenged done    #
+#                                                                                  #
 #    Bugs: None                                                                    #
 #                                                                                  #
 #    DESCRIPTION: A two-player terminal Tic-Tac-Toe game in Python featuring       #
@@ -141,5 +143,5 @@ def play_game():
             break
 
 
-if __name__ == "__main__":
+if 1 == 1:
     play_game()
