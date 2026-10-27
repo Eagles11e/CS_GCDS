@@ -6,46 +6,57 @@
 #                                                                                  #
 #    DATE: October 31, 2026                                                        #
 #                                                                                  #
-#    LOG: Version 1.0: 10/21/2026 - Initial functions and minor challenged done    #
+#    LOG: Version 0.8: 10/21/2026 - Initial functions and a few challenges done    #
+#         Version 0.9: 10/22/2026 - Added Scaling and Bot opponent                 #
 #                                                                                  #
 #    Bugs: None                                                                    #
 #                                                                                  #
-#    DESCRIPTION: A two-player terminal Tic-Tac-Toe game in Python featuring       #
-#                input validation, win/draw detection, and replay capabilities.    #
+#    DESCRIPTION: A terminal Tic-Tac-Toe game in Python featuring customizable     #
+#                board scaling (3x3 to 5x5), 1-Player (vs Bot) and 2-Player modes, #
+#                input validation, color output, win/draw detection, and replay.   #
 #                                                                                  #
-#   CHALLENGES: Play Again                                                         #
+#   CHALLENGES: Play Again, Bot Opponent, Dynamic Board Size, Color Output         #
 ####################################################################################
 
 def display_board(board):
     """
-    Print the current board state in a clean, readable grid format 
-    with row and column labels (1-3)
+    Description: Prints the current board state in a clean, readable
+                 grid format with row and column labels.
+    Parameters:  board (list) - 2D list representing the game board
+    Returns:     nothing
     """
-    print("\n    1   2   3")
-    for r in range(3):
+    size = len(board)
+    col_headers = "    " + "   ".join(str(i + 1) for i in range(size))
+    print("\n" + col_headers)
+    
+    divider = "   " + "-" * (size * 4 - 1)
+
+    for r in range(size):
         row_str = f"{r + 1}   " + " | ".join(board[r])
         print(row_str)
-        if r < 2:
-            print("   -----------")
+        if r < size - 1:
+            print(divider)
     print()
-
 
 def get_player_move(board, player):
     """
-    Prompt the current player for row and column inputs (1-3).
-    Validates that inputs are integers, within range, and targeting an empty space.
-    Returns zero-based index tuple: (row_index, col_index)
+    Description: Prompts the current player for row and column inputs 
+                 and validates integer type, range, and cell availability.
+    Parameters:  board (list) - 2D list representing the game board
+                 player (str) - active player's character (X or O)
+    Returns:     (tuple) zero-based index tuple (row_index, col_index)
     """
+    size = len(board)
     while True:
         try:
-            row_input = input(f"Player {player}, enter row (1-3): ").strip()
-            col_input = input(f"Player {player}, enter column (1-3): ").strip()
+            row_input = input(f"Player {player}, enter row (1-{size}): ").strip()
+            col_input = input(f"Player {player}, enter column (1-{size}): ").strip()
 
             row = int(row_input) - 1
             col = int(col_input) - 1
 
-            if not (0 <= row <= 2 and 0 <= col <= 2):
-                print("\033[31mInvalid range! Row and column must be between 1 and 3.\033[0m\n")
+            if not (0 <= row < size and 0 <= col < size):
+                print(f"\033[31mInvalid range! Row and column must be between 1 and {size}.\033[0m\n")
                 continue
 
             # Validate spot occupancy
@@ -56,35 +67,39 @@ def get_player_move(board, player):
             return row, col
 
         except ValueError:
-            print("\033[31mInvalid input! Please enter whole numbers (1, 2, or 3).\033[0m\n")
-
+            print(f"\033[31mInvalid input! Please enter whole numbers (1-{size}).\033[0m\n")
 
 def check_winner(board):
     """
-    Check all 8 winning conditions (3 rows, 3 columns, 2 diagonals).
-    Returns 'X', 'O', or None if there is no winner yet.
+    Description: Checks all winning conditions (rows, columns, and 
+                 both diagonals) for matching player symbols.
+    Parameters:  board (list) - 2D list representing the game board
+    Returns:     (str or None) symbol of the winner (X or O), or None
     """
+    size = len(board)
 
     for row in board:
-        if row[0] == row[1] == row[2] != " ":
+        if row[0] != " " and all(cell == row[0] for cell in row):
             return row[0]
 
-    for col in range(3):
-        if board[0][col] == board[1][col] == board[2][col] != " ":
+    for col in range(size):
+        if board[0][col] != " " and all(board[r][col] == board[0][col] for r in range(size)):
             return board[0][col]
 
-    if board[0][0] == board[1][1] == board[2][2] != " ":
+    if board[0][0] != " " and all(board[i][i] == board[0][0] for i in range(size)):
         return board[0][0]
     
-    if board[0][2] == board[1][1] == board[2][0] != " ":
-        return board[0][2]
+    if board[0][size - 1] != " " and all(board[i][size - 1 - i] == board[0][size - 1] for i in range(size)):
+        return board[0][size - 1]
 
     return None
 
-
 def is_draw(board):
     """
-    Return True if all cells are filled and there is no winner, otherwise False.
+    Description: Determines if all cells on the board are filled and
+                 no winning condition has been met.
+    Parameters:  board (list) - 2D list representing the game board
+    Returns:     (bool) True if the game ended in a draw, else False
     """
     if check_winner(board) is not None:
         return False
@@ -96,15 +111,82 @@ def is_draw(board):
                 
     return True
 
+def get_computer_move(board, Bot_symbol, human_symbol):
+    """
+    Description: Calculates the computer's turn using prioritized AI logic:
+                 1. Winning move, 2. Block human, 3. Center, 
+                 4. Corners, 5. Any open spot.
+    Parameters:  board (list)       - 2D list representing the game board
+                 Bot_symbol (str)   - computer opponent's symbol
+                 human_symbol (str) - human player's symbol
+    Returns:     (tuple) zero-based index tuple (row_index, col_index)
+    """
+    size = len(board)
+
+    #Try to win
+    for r in range(size):
+        for c in range(size):
+            if board[r][c] == " ":
+                board[r][c] = Bot_symbol
+                if check_winner(board) == Bot_symbol:
+                    board[r][c] = " "
+                    return r, c
+                board[r][c] = " "
+
+    #Try to block
+    for r in range(size):
+        for c in range(size):
+            if board[r][c] == " ":
+                board[r][c] = human_symbol
+                if check_winner(board) == human_symbol:
+                    board[r][c] = " "
+                    return r, c
+                board[r][c] = " "
+
+    #Take center
+    center = size // 2
+    if board[center][center] == " ":
+        return center, center
+
+    #Take corner
+    corners = [(0, 0), (0, size - 1), (size - 1, 0), (size - 1, size - 1)]
+    for r, c in corners:
+        if board[r][c] == " ":
+            return r, c
+
+    #Take any open spot
+    for r in range(size):
+        for c in range(size):
+            if board[r][c] == " ":
+                return r, c
 
 def play_game():
     """
-    Main game loop that initializes the board, allows Player 1 to choose X or O,
-    alternates player turns, evaluates game termination (win/draw), and handles replaying.
+    Description: Main game control loop that configures board size/mode,
+                 manages player turns, checks outcomes, and handles replays.
+    Parameters:  none
+    Returns:     nothing
     """
-
     while True:
-        board = [[" " for _ in range(3)] for _ in range(3)]
+        # Ask game mode (VS Computer or VS Player)
+        while True:
+            mode = input("\nSelect game mode (1 for vs Computer, 2 for 2-Player): ").strip()
+            if mode in ["1", "2"]:
+                break
+            print("\033[31mInvalid input! Please enter 1 or 2.\033[0m")
+
+        # Ask board size
+        while True:
+            try:
+                size_input = input("\nEnter board size (3 for 3x3, 4 for 4x4, 5 for 5x5): ").strip()
+                board_size = int(size_input)
+                if 3 <= board_size <= 5:
+                    break
+                print("\033[31mPlease choose a size between 3 and 5.\033[0m")
+            except ValueError:
+                print("\033[31mInvalid input! Please enter a number (3-5).\033[0m")
+
+        board = [[" " for _ in range(board_size)] for _ in range(board_size)]
 
         player_1_symbol = input("\nPlayer 1, enter your letter of choice (X or O): ").strip().upper()
         while player_1_symbol not in ["X", "O"]:
@@ -112,15 +194,27 @@ def play_game():
             player_1_symbol = input("Player 1, enter your letter of choice (X or O): ").strip().upper()
 
         player_2_symbol = "O" if player_1_symbol == "X" else "X"
-        print(f"Player 1 is '{player_1_symbol}' and Player 2 is '{player_2_symbol}'. Player 1 goes first!")
+
+        if mode == "1":
+            print(f"Player 1 is '{player_1_symbol}' and Player 2 (Computer) is '{player_2_symbol}'. Player 1 goes first!")
+        else:
+            print(f"Player 1 is '{player_1_symbol}' and Player 2 is '{player_2_symbol}'. Player 1 goes first!")
 
         current_player = player_1_symbol
 
         while True:
             display_board(board)
 
-            # Get validated move and place spot on the board
-            row, col = get_player_move(board, current_player)
+            # Route move depending on mode and active player
+            if current_player == player_1_symbol:
+                row, col = get_player_move(board, current_player)
+            else:
+                if mode == "1":
+                    print("Computer is making a move...")
+                    row, col = get_computer_move(board, player_2_symbol, player_1_symbol)
+                else:
+                    row, col = get_player_move(board, current_player)
+
             board[row][col] = current_player
 
             winner = check_winner(board)
@@ -134,13 +228,19 @@ def play_game():
                 print(f"\033[31mGame over! It's a draw!\033[0m")
                 break
 
-            current_player = "O" if current_player == "X" else "X"
+            current_player = player_2_symbol if current_player == player_1_symbol else player_1_symbol
 
         # Ask to replay
         replay = input("\nWould you like to play again? (y/n): ").strip().lower()
         if replay not in ["y", "yes"]:
-            print("\033[34m\nThanks for playing Tic-Tac-Toe! Goodbye!\033[0m")
-            break
+            
+            if replay in ["n", "no"]:
+                print("\033[34m\nThanks for playing Tic-Tac-Toe! Goodbye!\033[0m")
+                break
+            else:
+                print("Invalid input, answer with a y or n")
+                replay = input("\nWould you like to play again? (y/n): ").strip().lower()
+            
 
 
 if 1 == 1:
